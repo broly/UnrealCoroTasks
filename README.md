@@ -1,5 +1,5 @@
 # UnrealCoroTasks
-Coroutine tasks to simplify your async code avoiding delegates
+Coroutine tasks to simplify your async (non-blocking) code avoiding delegates
 
 # Asset async loading (comparison with classic approach)
 
