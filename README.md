@@ -36,7 +36,7 @@ CoroTasks approach
 		TSoftObjectPtr<UDataAsset> SoftAssetPtr;
 
 		// 2. Just call CoroTasks::LoadSingleObject on your asset pointer
-		UDataAsset* Asset = co_await CoroTasks::LoadSingleObject(SoftAssetPtr);
+		UDataAsset* Asset = co_await CoroTasks::AsyncLoadObject(SoftAssetPtr);
 
 		// Asset is fully loaded
 	}
