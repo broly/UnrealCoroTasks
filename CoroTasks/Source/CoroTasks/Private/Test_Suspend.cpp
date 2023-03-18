@@ -21,64 +21,24 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "CoroTasksTests.h"
+#include "CoroTask.h"
+#include "CoroTasksTestsSettings.h"
+#include "LoadAsset.h"
+#include "Misc/AutomationTest.h"
 
-#include "AsyncException.h"
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(Test_Suspend, "CoroTasks.Test_Suspend",
+                                 EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
-
-bool FNetworkedTests_RunAsyncTest::Update()
+CoroTasks::TTask<> TaskSuspend()
 {
-	if (!bExecuted)
-	{
-		bExecuted = true;
-		Test.LaunchTest(Parameters);
-	}
+	const TSoftObjectPtr<UObject> SoftObjectToLoad = GetDefault<UCoroTasksTestsSettings>()->TestObjectToLoad;
+	const UObject* Object = co_await CoroTasks::LoadSingleObject(SoftObjectToLoad);
+	UE_LOG(LogTemp, Log, TEXT("Finished %p"), Object);
 
-	if (Delegate.IsBound())
-		return Delegate.Execute();
-	
-	return false;
 }
 
-bool FAsyncAutomationTestBase::RunTest(const FString& Parameters)
+bool Test_Suspend::RunTest(const FString& Parameters)
 {
-	bIsFinished = false;
-	return StartNetworkedTest(Parameters);
-}
-
-bool FAsyncAutomationTestBase::StartNetworkedTest(const FString& Parameters)
-{
-	FinishedDelegate = FSimpleDelegate_Bool::CreateLambda([this]
-	{
-		return bIsFinished;
-	});
-
-	DummyCommand = MakeShareable(new FNetworkedTests_RunAsyncTest(*this, Parameters, FinishedDelegate, false));
-	FAutomationTestFramework::Get().EnqueueLatentCommand(DummyCommand);
+	TaskSuspend().Launch();
 	return true;
-}
-
-bool FAsyncAutomationTestBase::LaunchTest(const FString& Parameters)
-{
-	AsyncTest(Parameters).Launch();
-	return true;
-}
-
-CoroTasks::TTask<bool> FAsyncAutomationTestBase::AsyncTest(const FString Parameters)
-{
-	SetSuccessState(true);
-	bSuppressLogs = true;
-	try
-	{
-		co_await RunTest_Async(Parameters);
-	} catch (const FAsyncTestException& Exc)
-	{
-		bSuppressLogs = false;
-		const FString& ErrorMessage = Exc.GetMessage();
-		UE_LOG(LogTemp, Error, TEXT("Test failed with reason: %s"), *ErrorMessage);
-		AddError(ErrorMessage);
-		SetSuccessState(false);
-	}
-	bIsFinished = true;
-	co_return true;
 }

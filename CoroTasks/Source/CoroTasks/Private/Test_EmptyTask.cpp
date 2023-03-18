@@ -21,64 +21,28 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "CoroTasksTests.h"
+#include "CoroTask.h"
+#include "Misc/AutomationTest.h"
 
-#include "AsyncException.h"
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(Test_EmptyTask, "CoroTasks.EmptyTask",
+                                 EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
-
-bool FNetworkedTests_RunAsyncTest::Update()
+CoroTasks::TTask<int32> Task_RetVal()
 {
-	if (!bExecuted)
-	{
-		bExecuted = true;
-		Test.LaunchTest(Parameters);
-	}
-
-	if (Delegate.IsBound())
-		return Delegate.Execute();
-	
-	return false;
+	co_return 123;
 }
 
-bool FAsyncAutomationTestBase::RunTest(const FString& Parameters)
+CoroTasks::TTask<> Task_Empty()
 {
-	bIsFinished = false;
-	return StartNetworkedTest(Parameters);
+	int32 Res = co_await Task_RetVal();
+	UE_LOG(LogTemp, Display, TEXT("Res=%i"), Res);
 }
 
-bool FAsyncAutomationTestBase::StartNetworkedTest(const FString& Parameters)
-{
-	FinishedDelegate = FSimpleDelegate_Bool::CreateLambda([this]
-	{
-		return bIsFinished;
-	});
 
-	DummyCommand = MakeShareable(new FNetworkedTests_RunAsyncTest(*this, Parameters, FinishedDelegate, false));
-	FAutomationTestFramework::Get().EnqueueLatentCommand(DummyCommand);
+
+bool Test_EmptyTask::RunTest(const FString& Parameters)
+{
+	Task_Empty().Launch();
+	// Make the test pass by returning true, or fail by returning false.
 	return true;
-}
-
-bool FAsyncAutomationTestBase::LaunchTest(const FString& Parameters)
-{
-	AsyncTest(Parameters).Launch();
-	return true;
-}
-
-CoroTasks::TTask<bool> FAsyncAutomationTestBase::AsyncTest(const FString Parameters)
-{
-	SetSuccessState(true);
-	bSuppressLogs = true;
-	try
-	{
-		co_await RunTest_Async(Parameters);
-	} catch (const FAsyncTestException& Exc)
-	{
-		bSuppressLogs = false;
-		const FString& ErrorMessage = Exc.GetMessage();
-		UE_LOG(LogTemp, Error, TEXT("Test failed with reason: %s"), *ErrorMessage);
-		AddError(ErrorMessage);
-		SetSuccessState(false);
-	}
-	bIsFinished = true;
-	co_return true;
 }

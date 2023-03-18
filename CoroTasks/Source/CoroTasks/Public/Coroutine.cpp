@@ -22,6 +22,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Coroutine.h"
+#include "CoroTask.h"
+#include "CoroFuture.h"
 
 using namespace CoroTasks;
 
@@ -32,6 +34,7 @@ FFuture_Base::FFuture_Base()
 {
 	Exception = nullptr;
 	bResumed = false;
+	bWasSuspended = false;
 }
 
 FFuture_Base::~FFuture_Base()
